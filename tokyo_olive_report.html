@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2026年度 東京オリーブ会総会 インタラクティブ報告</title>
+    <!-- Chosen Palette: "Tokyo Olive" (Deep Navy: #003366, Gold Accent: #D4A017, Cream Background: #FDFBF6) -->
+    <!-- Application Structure Plan: 
+        SPA(シングル・ページ・アプリケーション)として、上部に固定ナビゲーションを配置したスクロール型レイアウトを採用します。
+        ユーザーは「ホーム」「会場と費用」「新しい運営方針」「今後の日程」の各セクションへ瞬時に移動できます。「会場レイアウト」は「会場と費用」セクション内に統合され、コストと物理的特徴を連続して理解できるようにしました。
+    -->
+    <!-- Visualization & Content Choices:
+        - [予算比較 (予算速報.pdf)] -> [グループ化棒グラフ (Chart.js)] -> [ホバーで詳細表示] -> [2024年と2026年の各費用項目（料理・会場・サービス等）を視覚的に直接比較するのに最適。Canvasで描画。]
+        - [会場スペック比較 (幹事会１.pdf)] -> [2列のHTMLカード] -> [静的表示] -> [プリンスと私学会館の主要な違い（広さ、費用）を並べて表示するのに明快。]
+        - [新しい運営方針 (幹事会１.pdf)] -> [3列のHTMLタイル] -> [静的表示] -> [「ポータル機能」「着席配慮」「新会計方針」の3つの概念を視覚的に分離し、理解を促進。]
+        - [スケジュール (幹事会１.pdf)] -> [HTMLリスト] -> [静的表示] -> [時系列情報をシンプルに提示。]
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+    
+    <!-- Google Fonts Noto Sans JP -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: #FDFBF6; /* Cream Background */
+            color: #333;
+        }
+        /* カスタムカラー */
+        .bg-navy-deep { background-color: #003366; }
+        .text-navy-deep { color: #003366; }
+        .text-gold-accent { color: #D4A017; }
+        .border-gold-accent { border-color: #D4A017; }
+
+        /* スムーズスクロール */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Chart.jsコンテナの厳格なスタイリング */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 900px; /* グラフの最大幅 */
+            margin-left: auto;
+            margin-right: auto;
+            height: 400px; /* モバイルでの基本高さ */
+            max-height: 450px; /* 最大の高さ */
+        }
+        
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 450px; /* デスクトップでの高さ */
+            }
+        }
+        
+        /* アクティブなナビゲーションリンクのスタイル */
+        nav a.active {
+            color: #D4A017; /* Gold Accent */
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- 1. Header & Navigation -->
+    <header class="bg-navy-deep sticky top-0 z-50 shadow-md">
+        <nav class="container mx-auto px-6 py-4">
+            <ul class="flex justify-center space-x-6 md:space-x-10">
+                <li><a href="#home" class="text-white hover:text-gold-accent transition duration-300">ホーム</a></li>
+                <li><a href="#venue-cost" class="text-white hover:text-gold-accent transition duration-300">会場と費用</a></li>
+                <li><a href="#policy" class="text-white hover:text-gold-accent transition duration-300">新しい運営方針</a></li>
+                <li><a href="#schedule" class="text-white hover:text-gold-accent transition duration-300">今後の日程</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- 2. Main Content Area -->
+    <main>
+
+        <!-- Section 1: Home (サマリー) -->
+        <section id="home" class="py-20 md:py-32 bg-white">
+            <div class="container mx-auto px-6 text-center">
+                <h1 class="text-4xl md:text-5xl font-bold text-navy-deep mb-6">2026年度 東京オリーブ会総会</h1>
+                <p class="text-xl md:text-2xl text-gold-accent font-medium mb-8">インタラクティブ運営方針報告</p>
+                <p class="text-lg text-gray-700 max-w-3xl mx-auto mb-12">
+                    2026年度総会の開催方針と重要決定事項について、拡大幹事の皆様へご報告いたします。本アプリは、新しい会場選定による大幅なコスト削減策や、持続可能な運営を目指すための新たな方針を、お手元で分かりやすく、深くご理解いただけるよう構成されております。
+                </p>
+                <a href="#venue-cost" class="bg-gold-accent text-navy-deep font-bold py-3 px-8 rounded-lg shadow-lg hover:bg-opacity-90 transition duration-300">
+                    主な変更点を見る
+                </a>
+            </div>
+        </section>
+
+        <!-- Section 2: Venue & Cost (会場と費用) - 会場レイアウトのコンセプトを統合 -->
+        <section id="venue-cost" class="py-20 md:py-28">
+            <div class="container mx-auto px-6">
+                <h2 class="text-3xl md:text-4xl font-bold text-navy-deep text-center mb-16">会場と費用の比較</h2>
+                <p class="text-lg text-gray-700 max-w-3xl mx-auto text-center mb-12">
+                    今回の最大の変更点は、会場の見直しによる運営費用の最適化です。前回（2024年）と今回（2026年）の会場案を比較し、コスト削減効果をグラフで視覚化しました。
+                </p>
+
+                <!-- 会場スペック比較 -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-20 max-w-5xl mx-auto">
+                    <!-- 2024 (前回) -->
+                    <div class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-gray-300">
+                        <h3 class="text-2xl font-bold text-gray-600 mb-4">案1：東京プリンスホテル (前回実績)</h3>
+                        <ul class="space-y-3 text-gray-700">
+                            <li><span class="font-semibold">会場：</span>鳳凰の間 (約1,650㎡)</li>
+                            <li><span class="font-semibold">懸念：</span>会場費 約10% UP</li>
+                            <li><span class="font-semibold text-red-600">想定会費：</span> <strong class="text-2xl text-red-600">15,000円</strong></li>
+                            <li class="italic text-gray-500">※食事グレード低下の可能性あり</li>
+                        </ul>
+                    </div>
+                    <!-- 2026 (新提案) -->
+                    <div class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-gold-accent">
+                        <h3 class="text-2xl font-bold text-navy-deep mb-4">案2：アルカディア市ヶ谷 (新提案)</h3>
+                        <ul class="space-y-3 text-gray-700">
+                            <li><span class="font-semibold">会場：</span>富士 (プリンス約半分の広さ)</li>
+                            <li><span class="font-semibold">特徴：</span>天井高6m、「ロビーオープン」採用</li>
+                            <li><span class="font-semibold text-green-700">想定会費：</span> <strong class="text-2xl text-green-700">9,000円</strong></li>
+                            <li class="italic text-gray-500">※開放的な空間利用が可能</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- インタラクティブ費用比較グラフ -->
+                <h3 class="text-2xl md:text-3xl font-bold text-navy-deep text-center mb-8">費用項目の詳細比較 (2024 vs 2026)</h3>
+                <p class="text-lg text-gray-700 max-w-3xl mx-auto text-center mb-10">
+                    グラフの各項目にカーソルを合わせると、具体的な金額が表示されます。特に「料理・飲み物代計」と「サービス料」の大幅な削減にご注目ください。
+                </p>
+                <div class="bg-white p-4 md:p-8 rounded-xl shadow-2xl">
+                    <div class="chart-container">
+                        <canvas id="budgetChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- 統合された会場レイアウトのコンセプト (旧Section 3の内容) -->
+                <div class="mt-20 pt-16 border-t border-gray-200">
+                    <h3 class="text-3xl md:text-4xl font-bold text-navy-deep text-center mb-10">会場レイアウトのコンセプト</h3>
+                    <div class="text-center mx-auto max-w-4xl">
+                        <h4 class="text-2xl font-bold text-navy-deep mb-6">「ロビーオープン」による開放的な空間</h4>
+                        <p class="text-lg text-gray-700 mb-6 mx-auto max-w-3xl">
+                            新しい会場「富士」は、プリンスホテルの約半分の面積ですが、**天井高6mという開放感**があります。
+                        </p>
+                        <p class="text-xl text-gray-800 mb-8 mx-auto max-w-3xl font-medium border-l-4 border-gold-accent pl-4 py-2 bg-gray-50 rounded-r-md">
+                            最大の特徴はロビーオープン手法の採用です。これにより、**通常は廊下やロビーとなるスペースも会場の一部として活用**し、参加者が交流しやすい、広々とした空間を創出します。
+                        </p>
+                        <p class="text-lg text-gray-700 font-semibold mx-auto max-w-3xl">
+                            お料理卓やバーを効果的に配置し、皆様が交流しやすいスムーズな動線を確保します。
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- Section 3: Policy (新しい運営方針) - IDは#policyに繰り上げ -->
+        <section id="policy" class="py-20 md:py-28 bg-white">
+            <div class="container mx-auto px-6">
+                <h2 class="text-3xl md:text-4xl font-bold text-navy-deep text-center mb-16">新しい運営方針と総会の役割</h2>
+                <p class="text-lg text-gray-700 max-w-3xl mx-auto text-center mb-12">
+                    会場と費用だけでなく、総会のあり方そのものも見直します。2026年度は、持続可能で参加しやすい総会を目指すための新しい試みを開始します。
+                </p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <!-- Tile 1: 総会の役割 -->
+                    <div class="bg-white p-8 rounded-xl shadow-lg hover:shadow-2xl transition-shadow duration-300">
+                        <h3 class="text-xl font-bold text-navy-deep mb-4 border-b-2 border-gold-accent pb-2">役割：中継基地（ポータル）</h3>
+                        <p class="text-gray-700">
+                            総会を、その後に開かれる各学年会へ繋ぐ「中継基地（ポータル）」と位置づけます。会場規模は変わりますが、他の学年と交流できる「積極的な交流の場」としての役割を果たせるよう工夫します。
+                        </p>
+                    </div>
+                    <!-- Tile 2: 新しい会計方針 -->
+                    <div class="bg-white p-8 rounded-xl shadow-lg hover:shadow-2xl transition-shadow duration-300">
+                        <h3 class="text-xl font-bold text-navy-deep mb-4 border-b-2 border-gold-accent pb-2">新会計方針：事前決済の導入</h3>
+                        <p class="text-gray-700">
+                            予算の早期確定と費用の無駄をなくすため、会費の「事前徴収」を導入します。キャッシュレス決済に対応し、事前協力者には割引を、当日参加者には割増料金を適用する方向で検討します。
+                        </p>
+                    </div>
+                    <!-- Tile 3: 着席への配慮 -->
+                    <div class="bg-white p-8 rounded-xl shadow-lg hover:shadow-2xl transition-shadow duration-300">
+                        <h3 class="text-xl font-bold text-navy-deep mb-4 border-b-2 border-gold-accent pb-2">参加者への配慮：着席スペース</h3>
+                        <p class="text-gray-700">
+                            立食形式が主となりますが、ご高齢の方や着席を希望される方のため、会場内にある程度の着席スペースを確保する方向で検討します。（※別室でのお弁当提供は行いません）
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Section 4: Schedule (今後の日程) - IDは#scheduleに繰り上げ -->
+        <section id="schedule" class="py-20 md:py-28">
+            <div class="container mx-auto px-6 max-w-3xl">
+                <h2 class="text-3xl md:text-4xl font-bold text-navy-deep text-center mb-16">今後の日程</h2>
+                <div class="bg-gray-50 border-l-4 border-gold-accent p-8 rounded-lg shadow-inner">
+                    <p class="text-lg text-gray-700 mb-6">
+                        総会成功に向け、以下のスケジュールで準備を進めてまいります。次回拡大幹事会以降、詳細を順次ご報告させていただきます。
+                    </p>
+                    <ul class="space-y-4">
+                        <li class="flex items-start">
+                            <span class="text-gold-accent font-bold text-lg mr-3">2026年 1月頃:</span>
+                            <span class="text-gray-800 text-lg">総会のテーマとイベントの提案、一次予算案の報告</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-gold-accent font-bold text-lg mr-3">2026年 6月頃:</span>
+                            <span class="text-gray-800 text-lg">案内状のデザインと内容の検討、発送準備</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-gold-accent font-bold text-lg mr-3">総会1か月前:</span>
+                            <span class="text-gray-800 text-lg">最終案内と参加者集計</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-gold-accent font-bold text-lg mr-3">2026年11月23日:</span>
+                            <span class="text-gray-800 text-lg font-bold text-navy-deep">2026年度 東京オリーブ会総会 開催</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- 3. Footer -->
+    <footer class="bg-navy-deep py-12 mt-16">
+        <div class="container mx-auto px-6 text-center">
+            <p class="text-white">
+                © 2026年度 東京オリーブ会総会 当番幹事 (43回生・44回生有志)
+            </p>
+        </div>
+    </footer>
+
+    <!-- 4. JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // --- 1. インタラクティブ・グラフの描画 (Chart.js) ---
+            
+            // 予算速報.pdfからデータを抽出（総計(税別)を除く主要項目）
+            const chartData = {
+                labels: [
+                    '料理・飲み物代計', 
+                    '会場料', 
+                    'サービス料', 
+                    'その他諸経費'
+                ],
+                datasets: [{
+                    label: '2024年実績 (東京プリンス)',
+                    data: [3112500, 500000, 469625, 508800],
+                    backgroundColor: '#003366', // Deep Navy
+                    borderColor: '#003366',
+                    borderWidth: 1,
+                    barThickness: 25,
+                }, {
+                    label: '2026年予算(案) (私学会館)',
+                    data: [2328480, 393228, 288503, 189540],
+                    backgroundColor: '#D4A017', // Gold Accent
+                    borderColor: '#D4A017',
+                    borderWidth: 1,
+                    barThickness: 25,
+                }]
+            };
+
+            const config = {
+                type: 'bar',
+                data: chartData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false, // コンテナのサイズに合わせる
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                color: '#333',
+                                font: {
+                                    family: 'Noto Sans JP'
+                                }
+                            }
+                        },
+                        title: {
+                            display: false,
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(context.parsed.y);
+                                    }
+                                    return label;
+                                }
+                            },
+                            backgroundColor: 'rgba(0, 51, 102, 0.9)',
+                            titleFont: { family: 'Noto Sans JP', size: 14 },
+                            bodyFont: { family: 'Noto Sans JP', size: 14 },
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', maximumFractionDigits: 0 }).format(value);
+                                },
+                                color: '#333',
+                                font: { family: 'Noto Sans JP' }
+                            },
+                            title: {
+                                display: true,
+                                text: '金額 (円)',
+                                color: '#333',
+                                font: { family: 'Noto Sans JP', weight: 'bold' }
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: '#333',
+                                font: { family: 'Noto Sans JP' }
+                            }
+                        }
+                    }
+                }
+            };
+
+            const budgetChart = new Chart(
+                document.getElementById('budgetChart'),
+                config
+            );
+
+            // --- 2. ナビゲーションのアクティブ状態管理 ---
+            const navLinks = document.querySelectorAll('nav a');
+            const sections = document.querySelectorAll('main section');
+            
+            const observerOptions = {
+                root: null,
+                rootMargin: '0px 0px -50% 0px', // ビューポートの中央がセクションに入るのを検出
+                threshold: 0
+            };
+
+            const observerCallback = (entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        navLinks.forEach(link => {
+                            link.classList.remove('active');
+                            link.classList.add('text-white');
+                        });
+                        const currentLink = document.querySelector(`nav a[href="#${entry.target.id}"]`);
+                        if (currentLink) {
+                            currentLink.classList.add('active');
+                            currentLink.classList.remove('text-white');
+                        }
+                    }
+                });
+            };
+
+            const sectionObserver = new IntersectionObserver(observerCallback, observerOptions);
+
+            sections.forEach(section => {
+                sectionObserver.observe(section);
+            });
+        });
+    </script>
+</body>
+</html>
